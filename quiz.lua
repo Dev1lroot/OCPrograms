@@ -88,17 +88,17 @@ local function getTrio()
   if first ~= "" then
     cmd.execute("money give "..first.." 100")
     cmd.execute("w "..first.." &aВы получили &b100 &aэмов")
-    win = win .. "&d" .. first
+    win = win .. "§d" .. first
   end
   if second ~= "" then
     cmd.execute("money give "..second.." 75")
     cmd.execute("w "..second.." &aВы получили &b75 &aэмов")
-    win = win .. "&a, &d" .. second
+    win = win .. "§a, §d" .. second
   end
   if third ~= "" then
     cmd.execute("money give "..third.." 50")
     cmd.execute("w "..third.." &aВы получили &b50 &aэмов")
-    win = win .. "&a и &d" .. third
+    win = win .. "§a и §d" .. third
   end
   ans(win)
 end
@@ -142,7 +142,7 @@ local function doOnEvent(event, ...)
       ask(questions[questionnow][1])
     else
       getTrio()
-      ans("ивент окончен")
+      ans("Ивент окончен!")
       event.ignore('chat_message', doOnEvent)
     end
   end
