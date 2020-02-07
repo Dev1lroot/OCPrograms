@@ -8,7 +8,6 @@
 --
 --  Includes
 --
-
 local os = require("os")
 local com = require("component")
 local cmd = com.opencb
@@ -21,7 +20,6 @@ box.setDistance(128)
 --
 -- Predefinitions
 --
-
 questionnow = 1;
 questions={}
 winners={}
@@ -35,14 +33,14 @@ end
 local function ask(q)
   if q ~= nil then
     box.setName("§4ВОПРОС§7")
-    box.say("§6"..q)
+    box.say("§a"..q)
   end
 end
 
 local function ans(q)
   if q ~= nil then
     box.setName("§4ВИКТОРИНА§7")
-    box.say("§2"..q)
+    box.say("§a"..q)
   end
 end
 
@@ -89,18 +87,18 @@ local function getTrio()
   win = "Победители: "
   if first ~= "" then
     cmd.execute("money give "..first.." 100")
-    cmd.execute("w "..first.." &2Вы получили &b100 &2эмов")
-    win = win .. first
+    cmd.execute("w "..first.." &aВы получили &b100 &aэмов")
+    win = win .. "&d" .. first
   end
   if second ~= "" then
     cmd.execute("money give "..second.." 75")
-    cmd.execute("w "..second.." &2Вы получили &b75 &2эмов")
-    win = win .. ", " .. second
+    cmd.execute("w "..second.." &aВы получили &b75 &aэмов")
+    win = win .. "&a, &d" .. second
   end
   if third ~= "" then
     cmd.execute("money give "..third.." 50")
-    cmd.execute("w "..third.." &2Вы получили &b50 &2эмов")
-    win = win .. " и " .. third
+    cmd.execute("w "..third.." &aВы получили &b50 &aэмов")
+    win = win .. "&a и &d" .. third
   end
   ans(win)
 end
@@ -136,7 +134,7 @@ end
 local function doOnEvent(event, ...)
   local id, user, msg = ...
   if string.match(string.lower(msg),questions[questionnow][2]) then
-    ans("§d"..user.." §6ответил верно!")
+    ans("§b"..user.." §aответил верно!")
     addPoint(user)
     os.sleep(1)
     questionnow = questionnow + 1
@@ -176,9 +174,9 @@ local function getQuestionList()
   if string.lower(x) == "y" then
     shell.execute("cls")
     io.write("Броадкастинг викторины запущен")
-    bc("До запуска викторины осталось &a10&6 минут")
+    bc("До запуска викторины осталось &b10 минут")
     os.sleep(300)
-    bc("До запуска викторины осталось &a5&6 минут")
+    bc("До запуска викторины осталось &b5 минут")
     os.sleep(300)
     bc("Викторина началась, поехали!")
     io.write("Броадкастинг викторины завершен")
