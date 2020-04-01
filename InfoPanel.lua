@@ -1,7 +1,7 @@
 -- ===============================================
 -- InfoPanel    v1.0                 (13 FEB 2020)
 -- Author:      Dev1lroot
--- Description: SkyDrive poshel nahui, toko spizdi
+-- Description: SkyDrive_ ne trogoi eto mojo
 -- ===============================================
 
 local com = require("component")
