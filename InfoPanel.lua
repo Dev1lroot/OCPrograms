@@ -8,7 +8,7 @@ local com = require("component")
 local unicode = require("unicode")
 local fs = require("filesystem")
 local screens = com.list('screen', true)
-local gpu = com.proxy(gpu)
+local gpu = com.gpu
 local defaultscreen = gpu.getScreen()
 local w, h = 0
 
