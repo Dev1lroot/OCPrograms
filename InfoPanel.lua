@@ -1,7 +1,7 @@
 -- ===============================================
--- InfoPanel    v1.0                 (13 FEB 2020)
+-- InfoPanel    v2.0                 (19 APR 2020)
 -- Author:      Dev1lroot
--- Description: SkyDrive_ ne trogoi eto mojo
+-- Description: Advanced Multiscreen Infopanel
 -- ===============================================
 
 local com = require("component")
@@ -121,8 +121,58 @@ function bindScreen(addr)
               gpu.setForeground(0xFFFFFF)
             end
           end
-          if unicode.sub(line,char,char) ~= "&" then
-            if unicode.sub(line,char-1,char-1) ~= "&" then
+          if unicode.sub(line,char-1,char-1) == "#" then
+            if unicode.lower(unicode.sub(line,char,char)) == "0" then
+              gpu.setBackground(0x000000)
+            end
+            if unicode.lower(unicode.sub(line,char,char)) == "1" then
+              gpu.setBackground(0x0000AA)
+            end
+            if unicode.lower(unicode.sub(line,char,char)) == "2" then
+              gpu.setBackground(0x00AA00)
+            end
+            if unicode.lower(unicode.sub(line,char,char)) == "3" then
+              gpu.setBackground(0x00AAAA)
+            end
+            if unicode.lower(unicode.sub(line,char,char)) == "4" then
+              gpu.setBackground(0xAA0000)
+            end
+            if unicode.lower(unicode.sub(line,char,char)) == "5" then
+              gpu.setBackground(0xAA00AA)
+            end
+            if unicode.lower(unicode.sub(line,char,char)) == "6" then
+              gpu.setBackground(0xFFAA00)
+            end
+            if unicode.lower(unicode.sub(line,char,char)) == "7" then
+              gpu.setBackground(0xAAAAAA)
+            end
+            if unicode.lower(unicode.sub(line,char,char)) == "8" then
+              gpu.setBackground(0x555555)
+            end
+            if unicode.lower(unicode.sub(line,char,char)) == "9" then
+              gpu.setBackground(0x5555FF)
+            end
+            if unicode.lower(unicode.sub(line,char,char)) == "a" then
+              gpu.setBackground(0x55FF55)
+            end
+            if unicode.lower(unicode.sub(line,char,char)) == "b" then
+              gpu.setBackground(0x55FFFF)
+            end
+            if unicode.lower(unicode.sub(line,char,char)) == "c" then
+              gpu.setBackground(0xFF5555)
+            end
+            if unicode.lower(unicode.sub(line,char,char)) == "d" then
+              gpu.setBackground(0xFF55FF)
+            end
+            if unicode.lower(unicode.sub(line,char,char)) == "e" then
+              gpu.setBackground(0xFFFF55)
+            end
+            if unicode.lower(unicode.sub(line,char,char)) == "f" then
+              gpu.setBackground(0xFFFFFF)
+            end
+          end
+          if (unicode.sub(line,char,char) ~= "&") or (unicode.sub(line,char-1,char-1) ~= "#") then
+            if (unicode.sub(line,char-1,char-1) ~= "&") or (unicode.sub(line,char-1,char-1) ~= "#") then
               gpu.set(7+w,i,unicode.sub(line,char,char))
               w = w + 1
             end
