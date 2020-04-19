@@ -171,8 +171,8 @@ function bindScreen(addr)
               gpu.setBackground(0xFFFFFF)
             end
           end
-          if (unicode.sub(line,char,char) ~= "&") or (unicode.sub(line,char-1,char-1) ~= "#") then
-            if (unicode.sub(line,char-1,char-1) ~= "&") or (unicode.sub(line,char-1,char-1) ~= "#") then
+          if (unicode.sub(line,char,char) ~= "&") and (unicode.sub(line,char,char) ~= "#") then
+            if (unicode.sub(line,char-1,char-1) ~= "&") and (unicode.sub(line,char-1,char-1) ~= "#") then
               gpu.set(7+w,i,unicode.sub(line,char,char))
               w = w + 1
             end
