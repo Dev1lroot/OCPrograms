@@ -2,7 +2,7 @@
 -- OpenComputers Lua ELinks Implementation v Alpha 0.0.2-24-MAY-2020
 -- Developed by: Dev1lroot               Licensed under: MIT License
 -- =================================================================
-llocal net = require("internet")
+local net = require("internet")
 local os = require("os")
 local com = require("component")
 local term = require("term")
@@ -75,8 +75,6 @@ function parseHTML(html)
         end
       end
     end
-  else
-  	global_tags = strSplit(html,"\n")
   end
   return global_tags
 end
@@ -112,19 +110,29 @@ function onClick(event, ...)
         os.sleep(0.2)
         drawButton(button,"free")
         if button.name:match("http") then
-          directRequest(button.name)
           print("goto.. "..button.name)
-        else
-          directRequest(domain..button.name)
+          directRequest(button.name)
           event.ignore('touch', onClick)
+        else
           if button.name:sub(1,1) == "/" then
             print("goto.. "..domain..button.name)
+            if button.name:len() ~= 1 then
+              if button.name:sub(2,2) ~= "?" then
+                domain = domain..button.name
+                domain = domain:gsub("%//", "/")
+                domain = domain:gsub("%:/", "://")
+              end
+            end
           else
           	print("goto.. "..domain..button.name)
-          	domain = url
+          	domain = domain..button.name
+            domain = domain:gsub("%//", "/")
+            domain = domain:gsub("%:/", "://")
           end
+          directRequest(domain)
+          event.ignore('touch', onClick)
         end
-        os.sleep(0.2)
+        os.sleep(1)
         anchor = true
       end
     end
@@ -143,9 +151,12 @@ function displayHTML(html)
   local depth = 0
   term.clear()
   if domain:match(".txt") then
-  	for i in pairs(tags) do
-  	  print(tags[i])
-  	end
+    print("Text file detected")
+  	local status, result = file_get_contents(domain)
+    if status then
+      term.setCursor(1,1)
+      print(result)
+    end
   else
   	w, h = gpu.getResolution()
   	gpu.fill(1,1,w,h," ")
