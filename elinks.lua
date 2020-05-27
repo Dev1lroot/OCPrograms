@@ -2,10 +2,6 @@
 -- OpenComputers Lua ELinks Implementation v Alpha 0.0.4-27-MAY-2020
 -- Developed by: Dev1lroot               Licensed under: MIT License
 -- =================================================================
--- =================================================================
--- OpenComputers Lua ELinks Implementation v Alpha 0.0.3-26-MAY-2020
--- Developed by: Dev1lroot               Licensed under: MIT License
--- =================================================================
 local net = require("internet")
 local os = require("os")
 local com = require("component")
