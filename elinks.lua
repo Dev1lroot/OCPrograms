@@ -1,4 +1,8 @@
 -- =================================================================
+-- OpenComputers Lua ELinks Implementation v Alpha 0.0.4-27-MAY-2020
+-- Developed by: Dev1lroot               Licensed under: MIT License
+-- =================================================================
+-- =================================================================
 -- OpenComputers Lua ELinks Implementation v Alpha 0.0.3-26-MAY-2020
 -- Developed by: Dev1lroot               Licensed under: MIT License
 -- =================================================================
@@ -17,6 +21,15 @@ local w, h = gpu.getResolution()
 local location = nil
 
 buttons = {}
+function exists(what,T)
+  o = false
+  for i in ipairs(T) do
+    if what == T[i] then
+      o = true
+    end
+  end
+  return o
+end
 function tlen(T)
   local count = 0
   for _ in pairs(T) do count = count + 1 end
@@ -107,14 +120,13 @@ end
 function parseHTML(html)
   local global_tags = {}
   if html:match("<") and html:match(">") then
-    local tags = strSplit(html,"<")
+    html = html:gsub("%<","_!_html_divider_!_<")
+    html = html:gsub("%>",">_!_html_divider_!_")
+    local tags = strSplit(html,"_!_html_divider_!_")
     for tag in tags do
-      local tagt = strSplit(tag,">")
-      for t in tagt do
-        t = trim(t)
-        if t:len() >= 1 then
-          table.insert(global_tags,t)
-        end
+      tag = trim(tag)
+      if tag:len() >= 1 then
+        table.insert(global_tags,tag)
       end
     end
   end
@@ -157,10 +169,10 @@ function directRequest(url)
   local status, result = file_get_contents(url)
   if status then
       event.ignore('touch', onClick)
-  	  displayHTML(result)
-  	  term.setCursor(1,h-1)
+      displayHTML(result)
+      term.setCursor(1,h-1)
   else
-  	status("Page not found")
+    status("Page not found")
   end
   while(wt) do
     os.sleep(1)
@@ -194,9 +206,9 @@ function onClick(event, ...)
               end
             end
           else
-          	status("goto.. "..domain..button.name)
+            status("goto.. "..domain..button.name)
             if domain:sub(domain:len(),domain:len()) == "/" then
-          	  domain = domain..button.name
+              domain = domain..button.name
             else
               domain = domain.."/"..button.name
             end
@@ -243,15 +255,60 @@ function navigation(state, adress, char, code)
   gpu.setForeground(0xFFFFFF)
   gpu.setBackground(0x000000)
 end
-
+function recognizeTag(tag,depth)
+  r = false
+  t = {["name"] = nil}
+  if tag:sub(1,5) == "<html" then
+    t = {["name"] = "html"}
+    r = false
+  end
+  if tag:sub(1,4) == "<div" then
+    t = {["name"] = "div"}
+    r = false
+  end
+  if tag:sub(1,4) == "<pre" then
+    t = {["name"] = "pre"}
+    r = false
+  end
+  if tag:sub(1,4) == "<img" then
+    t = {["name"] = "img"}
+    r = false
+  end
+  if tag:sub(1,3) == "<br" then
+    t = {["name"] = "br"}
+    r = true
+  end
+  if tag:sub(1,3) == "<hr" then
+    t = {["name"] = "hr"}
+    r = true
+  end
+  if tag:sub(1,2) == "<p" then
+    t = {["name"] = "p"}
+    r = true
+  end
+  if exists(tag:sub(1,3),{"<h1","<h2","<h3"}) then
+    t = {["name"] = "header"}
+    r = true
+  end
+  if tag:sub(1,2) == "<a" then
+    local link = tag:sub(10,tag:len()-1)
+    if link:match("\"") then
+      for str in string.gmatch(link, "([^\"]+)") do
+        link = str
+        break
+      end
+    end
+    link = trim(link)
+    t = {["name"] = "a",["link"] = link}
+    r = true
+  end
+  return r, t
+end
 function displayHTML(html)
-  local displaylines = 0
-  local tags = parseHTML(html)
-  local depth = 1
   term.clear()
   if domain:match(".txt") then
     status("Long file! Please wait..")
-  	local status, result = file_get_contents(domain)
+    local status, result = file_get_contents(domain)
     if status then
       term.setCursor(1,1)
       print(result)
@@ -261,49 +318,69 @@ function displayHTML(html)
       status("Failure")
     end
   else
-  	w, h = gpu.getResolution()
-  	gpu.fill(1,1,w,h," ")
+    local displaylines = 0
+    local tags = parseHTML(html)
+    local depth = 1
+    local displaycontent = false
+    local tag = {}
+    local inside = false
+    w, h = gpu.getResolution()
+    gpu.fill(1,1,w,h," ")
     print(" ")
-	  for i in pairs(tags) do
-	  	if tags[i]:sub(1,4) == ("/div" or "/pre") then
-	  	  if depth > 1 then
-	  	  	depth = depth - 1
-	  	  end
-	  	end
-	  	if tags[i]:sub(1,3) == ("div" or "pre") then
-	  	  depth = depth + 1
-	  	end
-	  	if tags[i]:sub(1,1) == "p" and tags[i]:sub(2,2) ~= "r" then
-	  	  print(tabulator(depth," ")..tags[i+1])
-	  	  displaylines = displaylines + 1
-	  	end
-      if tags[i]:sub(1,2) == "hr" then
-        print(tabulator(depth," ")..tabulator(w-((depth*2)*2+1),"-"))
-        displaylines = displaylines + 1
-      end
-	  	if tags[i]:sub(1,2) == ("h1" or "h2" or "h3") then
-	  	  print(tabulator(depth," ")..tags[i+1])
-	  	  displaylines = displaylines + 1
-	  	end
-	  	if tags[i]:sub(1,1) == "a" then
-        local link = tags[i]:sub(9,tags[i]:len()-1)
-        if link:match("\"") then
-          for i = 1, #link do
-            if link:sub(i,i) == "\"" then
-              link = link:sub(1,i)
-              break
+    for i in pairs(tags) do
+      if displaylines >= h-2 then
+        --mb later
+      else
+        if tags[i]:sub(1,1) == "<" then
+          if tags[i]:sub(2,2) == "/" then
+            inside = false
+            tag = {}
+            displaycontent = false
+            --print(tabulator(depth," ")..tags[i])
+            if depth > 1 then depth = depth - 1 end
+          else
+            inside = true
+            displaycontent, tag = recognizeTag(tags[i],depth)
+            if tag["name"] == "br" then
+              displaylines = displaylines + 1
+              tag = {}
+            end
+            if tag["name"] == "hr" then
+              print("  "..tabulator(w-5,"-"))
+              displaylines = displaylines + 1
+              tag = {}
+            end
+            if exists(tag["name"],{"br","hr","img","body","html"}) == false then
+              depth = depth + 1
+            end
+            --print(tabulator(depth," ")..tags[i])
+          end
+        else
+          if displaycontent == true then
+            if exists(tag["name"],{"header","p"}) then
+              displaylines = displaylines + 1
+              print(tabulator(depth," ")..tags[i])
+              tag = {}
+            end
+            if tag["name"] == "a" then
+              print(" ")
+              displaylines = displaylines + 1
+              mv = 0
+              while exists(tags[i+mv]:sub(1,4),{"<div","<pre"}) or exists(tags[i+mv]:sub(1,5),{"</div","</pre"}) do
+                mv = mv + 1
+              end
+              addButton(depth+2,displaylines+1,tag["link"],tags[i+mv])
+              tag = {}
+            end
+          else
+            if inside == false then
+              gpu.set(w-((depth*2)+tags[i]:len()),displaylines+1,tags[i])
             end
           end
         end
-	  	  addButton(depth+2,displaylines+2,link,tags[i+1])
-        print(" ")
-        displaylines = displaylines + 1
-	  	end
-      if displaylines > h then
-        break --will be improved later (mb)
       end
-	  end
-	  drawGUI()
+    end
+    drawGUI()
     event.listen('touch', onClick)
     event.listen("key_up", navigation)
     status("Ready")
@@ -313,11 +390,11 @@ end
 function launchRequest()
   local url = args[1]
   if url == nil then
-  	directRequest(nil)
+    directRequest(nil)
   else
     domain = url
     if url:sub(1,4) ~= "http" then
-    	status("Unvalid URL!")
+      status("Unvalid URL!")
       directRequest(nil)
     else
       directRequest(url)
