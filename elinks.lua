@@ -1,5 +1,5 @@
 -- =================================================================
--- OpenComputers Lua ELinks Implementation v Alpha 0.0.4-27-MAY-2020
+-- OpenComputers Lua ELinks Implementation v Alpha 0.0.5-27-MAY-2020
 -- Developed by: Dev1lroot               Licensed under: MIT License
 -- =================================================================
 local net = require("internet")
@@ -15,8 +15,14 @@ local domain = ""
 local wt = true
 local w, h = gpu.getResolution()
 local location = nil
+local isfile = false
+shell.execute("mkdir /home/downloads/")
 
 buttons = {}
+function try(f, catch_f)
+  local status, exception = pcall(f)
+  if not status then catch_f(exception) end
+end
 function exists(what,T)
   o = false
   for i in ipairs(T) do
@@ -136,7 +142,10 @@ function tabulator(by,char)
   end
   return strout
 end
-
+function url_escape_filename(url)
+  url = url:gsub(tilbake(url), "")
+  return url
+end
 function directRequest(url)
   buttons = {}
   if url == nil then
@@ -162,22 +171,48 @@ function directRequest(url)
   else
     location = url
   end
-  local status, result = file_get_contents(url)
-  if status then
-      event.ignore('touch', onClick)
-      displayHTML(result)
-      term.setCursor(1,h-1)
-  else
-    status("Page not found")
-  end
-  while(wt) do
-    os.sleep(1)
-  end
+  try(function()
+    if isfile == true then
+      gpu.setForeground(0x000000)
+      gpu.setBackground(0x000000)
+      gpu.fill(1,1,w,h-1," ")
+      gpu.setBackground(0xFFFFFF)
+      gpu.fill(10,18,w-20,h-36," ")
+      term.setCursor(w/2-17,h/2-2)
+      print("The following link contains a file")
+      gpu.setForeground(0xFFFFFF)
+      gpu.setBackground(0x000000)
+      gpu.fill(16,h/2,w-32,1," ")
+      term.setCursor(16,h/2)
+      print(url)
+      term.setCursor(16,h/2+3)
+      print("(O)pen")
+      term.setCursor(w-27,h/2+3)
+      print("(D)ownload")
+      event.listen("key_up", navDownload)
+    else
+      local status, result = file_get_contents(url)
+      if status then
+          event.ignore('touch', onClick)
+          displayHTML(result)
+          term.setCursor(1,h-1)
+      else
+        status("No Internet Connection")
+        directRequest(nil)
+      end
+    end end, function(e)
+      status("403 Forbidden")
+      directRequest(nil)
+    end)
+    while(wt) do
+      os.sleep(1)
+    end
 end
 
 function onClick(event, ...)
   local anchor = false
   local addr, x, y = ...
+  local l = ""
   for i,button in ipairs(buttons) do
     if y == button.y and x >= button.x then
       if button.x + unicode.len(button.label) + 4 > x then
@@ -186,8 +221,10 @@ function onClick(event, ...)
         drawButton(button,"free")
         if button.name:match("http") then
           domain = button.name
-          status("goto.. "..domain)
-          directRequest(domain)
+          l = domain
+          status("goto.. "..l)
+          if exists(l:sub(l:len()-3,l:len()),{".txt",".log",".lua"}) then isfile = true end
+          directRequest(l)
         else
           if button.name:sub(1,1) == "/" then
             if button.name:len() ~= 1 then
@@ -195,10 +232,13 @@ function onClick(event, ...)
                 domain = domain..button.name
                 domain = domain:gsub("%//", "/")
                 domain = domain:gsub("%:/", "://")
+                if domain:match(".") then isfile = true end
                 status("goto.. "..domain)
               else
-                status("goto.. "..domain..button.name)
-                directRequest(domain..button.name)
+                l = domain..button.name
+                status("goto.. "..l)
+                if exists(l:sub(l:len()-3,l:len()),{".txt",".log",".lua"}) then isfile = true end
+                directRequest(l)
               end
             end
           else
@@ -211,7 +251,9 @@ function onClick(event, ...)
             domain = domain:gsub("%//", "/")
             domain = domain:gsub("%:/", "://")
           end
-          directRequest(domain)
+          l = domain
+          if exists(l:sub(l:len()-3,l:len()),{".txt",".log",".lua"}) then isfile = true end
+          directRequest(l)
         end
         os.sleep(1)
         anchor = true
@@ -224,7 +266,41 @@ function onClick(event, ...)
     drawGUI()
   end
 end
-
+function proceed(state, adress, char, code)
+  if code == 24 then
+    isfile = false
+    directRequest(tilbake(location))
+    event.ignore("key_up", proceed)
+  end
+end
+function navDownload(state, adress, char, code)
+  event.ignore("key_up", navigation)
+  if code == 24 then
+    isfile = false
+    event.ignore("key_up", navDownload)
+    event.listen("key_up", navigation)
+    directRequest(location)
+  end
+  if code == 32 then
+    isfile = false
+    event.ignore("key_up", navDownload)
+    print(url_escape_filename(location))
+    gpu.setForeground(0x000000)
+    gpu.setBackground(0x000000)
+    gpu.fill(1,1,w,h-1," ")
+    gpu.setBackground(0xFFFFFF)
+    gpu.fill(10,18,w-20,h-36," ")
+    term.setCursor(w/2-10,h/2-2)
+    print("Download Status")
+    gpu.setForeground(0xFFFFFF)
+    gpu.setBackground(0x000000)
+    term.setCursor(16,h/2-4)
+    shell.execute("wget "..location.." /home/downloads"..url_escape_filename(location))
+    term.setCursor(w/2-2,h/2)
+    print("(O)k")
+    event.listen("key_up", proceed)
+  end
+end
 function navigation(state, adress, char, code)
   w, h = gpu.getResolution()
   status("Char:"..char.." Code:"..code)
@@ -248,12 +324,20 @@ function navigation(state, adress, char, code)
       directRequest(location)
     end
   end
-  gpu.setForeground(0xFFFFFF)
-  gpu.setBackground(0x000000)
 end
 function recognizeTag(tag,depth)
   r = false
   t = {["name"] = nil}
+  if tag:sub(1,6) == "<input" then
+    if tag:find("text") then
+      t = {["name"] = "field"}
+      r = false
+    end
+    if tag:find("submit") then
+      t = {["name"] = "submit"}
+      r = false
+    end
+  end
   if tag:sub(1,5) == "<html" then
     t = {["name"] = "html"}
     r = false
@@ -295,8 +379,13 @@ function recognizeTag(tag,depth)
       end
     end
     link = trim(link)
-    t = {["name"] = "a",["link"] = link}
-    r = true
+    if tag:match("download>") then
+      t = {["name"] = "a",["link"] = link,["type"] = "download"}
+      r = true
+    else
+      t = {["name"] = "a",["link"] = link,["type"] = "redirect"}
+      r = true
+    end
   end
   return r, t
 end
@@ -346,7 +435,12 @@ function displayHTML(html)
               displaylines = displaylines + 1
               tag = {}
             end
-            if exists(tag["name"],{"br","hr","img","body","html"}) == false then
+            if tag["name"] == "field" then
+              print(tabulator(depth," ")..tabulator(10,"_"))
+              displaylines = displaylines + 1
+              tag = {}
+            end
+            if exists(tag["name"],{"br","hr","img","body","html","submit","field"}) == false then
               depth = depth + 1
             end
             --print(tabulator(depth," ")..tags[i])
